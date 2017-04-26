@@ -1,10 +1,31 @@
 #!/usr/bin/python3
 import time
-import telepot
 import subprocess
+import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+import serial
 
 chuchuyeah = False
+threshold_upper_light = 590 # default value of upper threshold is 590
+
+def send_int_to_arduino(int_value):
+	empty_bytes = bytes([int(int_value/256)])
+	empty_bytes2 = bytes([int_value%256])
+	ser.write(empty_bytes)
+	ser.write(empty_bytes2)
+
+def light(chat_id,is_dim):
+	global threshold_upper_light
+	threshold_upper_light += is_dim * 30
+
+	if is_dim == 1:
+		bot.sendMessage(chat_id, 'Dim')
+	else:
+		bot.sendMessage(chat_id, 'Lighten')
+
+	# write to Arduino
+	ser.write(b'l')
+	send_int_to_arduino(threshold_upper_light)
 
 def photo(chat_id):
 
@@ -87,6 +108,10 @@ def on_chat_message(msg):
 			photo(chat_id)
 		elif msg['text'].strip().lower() == '/video':
 			video(chat_id)
+		elif msg['text'].strip().lower() == '/lighten':
+			light(chat_id,-1)
+		elif msg['text'].strip().lower() == '/dim':
+			light(chat_id,1)
 		elif msg['text'].strip().lower() == '/clear':
 			clear(chat_id)
 		elif msg['text'].strip().lower() == 'chu chu yeah':
@@ -143,9 +168,9 @@ def on_callback_query(msg):
 	if query_data == 'video':
 		video(from_id)
 	if query_data == 'lighten':
-		pass
+		light(from_id,-1)
 	if query_data == 'dim':
-		pass
+		light(from_id,1)
 	if query_data == 'harvest':
 		pass
 
@@ -165,6 +190,12 @@ def on_callback_query(msg):
 # Main program
 
 bot = telepot.Bot('321380226:AAF6x7YH4uk5fpCtMVdcAKgnd0x_0zWaps4')
+
+ser = serial.Serial('/dev/ttyUSB0', 9600)
+
+# communicate with Arduino
+ser.write(b'l')
+send_int_to_arduino(threshold_upper_light)
 
 bot.message_loop({'chat': on_chat_message, 'callback_query': on_callback_query})
 print ('Listening ...')

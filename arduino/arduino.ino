@@ -17,6 +17,10 @@ int value_light; // light -> lower ; dark -> higher
 int time_pump = 1; // 1 sec now (water flow rate is about 24mL/sec)
 int intensity_led = 0;
 
+// for serial connection with Raspberry Pi
+byte data1;
+byte data2;
+int data;
 
 void setup() {
   pinMode(sensor_moist, INPUT);
@@ -32,7 +36,7 @@ void setup() {
 }
 
 void loop() {
-  // read data
+  // read data from sensor
   value_moist = analogRead(sensor_moist);
   value_light = analogRead(sensor_light);
   
@@ -41,6 +45,33 @@ void loop() {
   Serial.println(value_moist);
   Serial.print("Light: ");
   Serial.println(value_light);
+  
+  // read data from raspberry pi
+  if (Serial.available()) {
+    char command = Serial.read();
+    if (command=='l'){
+      
+      // receive data
+      data1 = Serial.read();
+      data2 = Serial.read();
+      data=data1*256+data2;
+      
+      // update threshold value
+      threshold_upper_light=data;
+      threshold_lower_light=data+60;
+      if (threshold_lower_light>1023){
+        threshold_lower_light=1023;
+      }
+      
+      Serial.print("Light Upper Threshold: ");
+      Serial.println(threshold_upper_light);
+      
+    } else if (command=='w'){
+      Serial.println("Water!");
+    } else {
+      Serial.println(command);
+    }
+  }  
   
   // response action of moist
   if ( value_moist > threshold_moist ) {
@@ -73,8 +104,6 @@ void loop() {
     delay(10);
     value_light = analogRead(sensor_light);
   }
-    
-  
   
   Serial.print("LED Intensity: ");
   Serial.println(intensity_led);
