@@ -1,7 +1,9 @@
 // Nano PWM: 3, 5, 6, 9, 10, and 11. Provide 8-bit PWM output with the analogWrite() function.
 
+#include <dht.h>
+
 int sensor_moist = A0;
-int sensor_temp = A2;
+int sensor_dht = 9;
 int sensor_light = A1;
 
 int driver_led = 11;
@@ -13,6 +15,7 @@ int threshold_lower_light = 650;
 
 int value_moist;
 int value_light; // light -> lower ; dark -> higher
+dht DHT; // temp and humidity
 
 int time_pump = 1; // 1 sec now (water flow rate is about 24mL/sec)
 int intensity_led = 0;
@@ -24,7 +27,7 @@ int data;
 
 void setup() {
   pinMode(sensor_moist, INPUT);
-  pinMode(sensor_temp, INPUT);
+  pinMode(sensor_dht, INPUT);
   pinMode(sensor_light, INPUT);
   
   pinMode(driver_led, OUTPUT);
@@ -39,12 +42,18 @@ void loop() {
   // read data from sensor
   value_moist = analogRead(sensor_moist);
   value_light = analogRead(sensor_light);
+  DHT.read11(sensor_dht);
   
   // print data
   Serial.print("Moisture: ");
   Serial.println(value_moist);
   Serial.print("Light: ");
   Serial.println(value_light);
+  Serial.println("t");
+  Serial.print("Temperature (C): ");
+  Serial.println(DHT.temperature, 1);
+  Serial.print("Enviroment Humidity (%): ");
+  Serial.println(DHT.humidity, 1);
   
   // read data from raspberry pi
   if (Serial.available()) {
