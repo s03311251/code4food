@@ -27,7 +27,7 @@ thread1.start()
 stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = socket.gethostname()
 print(host)
-stem.bind((host, 8763))
+stem.bind(('', 8763))
 stem.listen(5)
 
 with open('/home/pi/raspberry/data_stem.txt', 'r') as f:

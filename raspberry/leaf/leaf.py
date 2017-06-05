@@ -4,9 +4,41 @@ import time
 import socket
 import threading
 from sense_hat import SenseHat
+import serial
 
 sense = SenseHat()
 host = "192.168.1.1"
+
+dht_status = 'No data'
+dht_flag = 0
+
+class thread_read_serial (threading.Thread):
+	def run(self):
+		while True :
+			global dht_status
+			global dht_flag
+			line = ser.readline().decode('utf-8')[:-2]
+			if line:  # If it isn't a blank line
+				print(line)
+
+				if dht_flag == 2:
+					dht_status = line
+					dht_flag -= 1
+
+				elif dht_flag == 1:
+					dht_status = dht_status + '\n' + line
+					dht_flag -= 1
+
+				if line == 't':
+					dht_flag = 2
+		
+		
+
+def send_int_to_arduino(int_value):
+	empty_bytes = bytes([int(int_value/256)])
+	empty_bytes2 = bytes([int_value%256])
+	ser.write(empty_bytes)
+	ser.write(empty_bytes2)
 
 class photoThread (threading.Thread):
 	def __init__(self):
@@ -51,7 +83,7 @@ while True: # data loop
 	humidity = sense.get_humidity()
 	temperature = sense.get_temperature()
 
-	message = "Temperature = "+str(temperature)+" C\nHumidity = "+str(humidity)+" %"
+	message = "Temperature = "+str(temperature)+" C\nHumidity = "+str(humidity)+" %"+"DHT Information:\n"+dht_status
 	print(message.encode('utf-8'))
 	stem.sendto(message.encode('utf-8'), (host, 8763))
 
