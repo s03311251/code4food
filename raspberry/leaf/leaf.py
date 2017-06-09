@@ -1,37 +1,38 @@
 #!/usr/bin/python3
-import subprocess
-import time
-import socket
-import threading
-from sense_hat import SenseHat
+import os
+#from sense_hat import SenseHat
 import serial
+#import socket
+import subprocess
+import threading
+import time
 
-sense = SenseHat()
-host = "192.168.1.1"
-
-dht_status = 'No data'
-dht_flag = 0
-
-class thread_read_serial (threading.Thread):
+class threadReadSerial (threading.Thread):
 	def run(self):
+		data = {}
+		data_flag = ''
 		while True :
-			global dht_status
-			global dht_flag
+			#global dht_status
+			#global dht_flag
 			line = ser.readline().decode('utf-8')[:-2]
 			if line:  # If it isn't a blank line
 				print(line)
 
-				if dht_flag == 2:
-					dht_status = line
-					dht_flag -= 1
-
-				elif dht_flag == 1:
-					dht_status = dht_status + '\n' + line
-					dht_flag -= 1
-
-				if line == 't':
-					dht_flag = 2
-		
+				if line == 'moisture':
+					data_flag = 'Moisture'
+				elif line == 'light':
+					data_flag = 'Light'
+				elif line == 'temperature':
+					data_flag = 'Temperature'
+				elif line == 'humidity':
+					data_flag = 'Enviroment Humidity'
+				elif line == 'led':
+					data_flag = 'LED Intensity'
+				else:
+					data[data_flag] = float(line)
+					print (data_flag, ':', data[data_flag])
+					print (type(data[data_flag]))
+					data_flag = ''		
 		
 
 def send_int_to_arduino(int_value):
@@ -50,12 +51,13 @@ class photoThread (threading.Thread):
 		while True:
 			global host
 			photo_id=(photo_id+1)%256
-			command = 'ffmpeg -y -f video4linux2 -s 640x480 -i /dev/video0 -ss 0:0:2 -frames 1 /home/pi/raspberry/data_leaf/' + str(photo_id).zfill(10) + '.jpg'
+			command = 'ffmpeg -y -f video4linux2 -s 640x480 -i /dev/video0 -ss 0:0:2 -frames 1 /home/pi/raspberry/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
 			subprocess.call(command, shell=True)
 
 			with open('/home/pi/raspberry/data_leaf.txt', 'w') as f:
 				f.write(str(photo_id))
-
+			'''
+			# send photo
 			stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			stem.connect((host, 8763))
 			stem.send(b"r")
@@ -71,13 +73,30 @@ class photoThread (threading.Thread):
 
 			print('Done sending')
 			stem.close()
-
+			'''
 			time.sleep(10) # 10 sec
+
+
+#sense = SenseHat()
+host = "192.168.1.1"
+dht_status = 'No data'
+dht_flag = 0
+
+pwd = os.getcwd()
+print (pwd)
+
+# communicate with Arduino
+ser = serial.Serial('/dev/ttyUSB0', 9600)
 
 thread1 = photoThread()
 thread1.start()
 
+thread2 = threadReadSerial()
+thread2.start()
+
 while True: # data loop
+	time.sleep(10) # 10 sec
+	'''
 	stem = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	
 	humidity = sense.get_humidity()
@@ -86,5 +105,4 @@ while True: # data loop
 	message = "Temperature = "+str(temperature)+" C\nHumidity = "+str(humidity)+" %"+"DHT Information:\n"+dht_status
 	print(message.encode('utf-8'))
 	stem.sendto(message.encode('utf-8'), (host, 8763))
-
-	time.sleep(10) # 10 sec
+	'''

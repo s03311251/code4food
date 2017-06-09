@@ -45,14 +45,13 @@ void loop() {
   DHT.read11(sensor_dht);
   
   // print data
-  Serial.print("Moisture: ");
+  Serial.println("moisture");
   Serial.println(value_moist);
-  Serial.print("Light: ");
+  Serial.println("light");
   Serial.println(value_light);
-  Serial.println("t");
-  Serial.print("Temperature (C): ");
+  Serial.println("temperature");
   Serial.println(DHT.temperature, 1);
-  Serial.print("Enviroment Humidity (%): ");
+  Serial.println("humidity");
   Serial.println(DHT.humidity, 1);
   
   // read data from raspberry pi
@@ -114,7 +113,7 @@ void loop() {
     value_light = analogRead(sensor_light);
   }
   
-  Serial.print("LED Intensity: ");
+  Serial.println("led");
   Serial.println(intensity_led);
 
   delay(1000);
