@@ -50,9 +50,9 @@ void loop() {
   Serial.println("light");
   Serial.println(value_light);
   Serial.println("temperature");
-  Serial.println(DHT.temperature, 1);
+  Serial.println(DHT.temperature);
   Serial.println("humidity");
-  Serial.println(DHT.humidity, 1);
+  Serial.println(DHT.humidity);
   
   // read data from raspberry pi
   if (Serial.available()) {
