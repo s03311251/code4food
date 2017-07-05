@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-from sense_hat import SenseHat
+#from sense_hat import SenseHat
 import serial
 #import socket
 import subprocess
@@ -9,11 +9,10 @@ import time
 
 class threadReadSerial (threading.Thread):
 	def run(self):
-		data = {}
+		global data
+		global data_fresh
 		data_flag = ''
 		while True :
-			#global dht_status
-			#global dht_flag
 			line = ser.readline().decode('utf-8')[:-2]
 			if line:  # If it isn't a blank line
 				print(line)
@@ -29,33 +28,34 @@ class threadReadSerial (threading.Thread):
 				elif line == 'led':
 					data_flag = 'LED Intensity'
 				elif data_flag != '':
-					data[data_flag] = float(line)
-					print (data_flag, ':', data[data_flag])
-					data_flag = ''		
-		
-
-def send_int_to_arduino(int_value):
-	empty_bytes = bytes([int(int_value/256)])
-	empty_bytes2 = bytes([int_value%256])
-	ser.write(empty_bytes)
-	ser.write(empty_bytes2)
+					lock.acquire()
+					try:
+						data[data_flag] = float(line)
+						data_fresh[data_flag] = True
+						print (data_flag, ':', data[data_flag])
+					finally:
+						lock.release()
+						data_flag = ''
 
 class photoThread (threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 	def run(self):
-		global pwd
+		global PWD
 		global host
-		with open(pwd+'/data_leaf.txt', 'r') as f:
+		with open(PWD+'/data_leaf.txt', 'r') as f:
 			photo_id = int(f.readline())
 
 		while True:
 			photo_id=(photo_id+1)%256
-			command = 'avconv -y -f video4linux2 -s 640x480 -i /dev/video0 -ss 0:0:2 -frames 1 ' + pwd + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
-			print ('Taking photo')
-			subprocess.call(command, shell=True)
 
-			with open(pwd+'/data_leaf.txt', 'w') as f:
+			print ('Taking photo')
+			command = 'avconv -y -f video4linux2 -s 640x480 -i /dev/video0 -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/tmp.jpg 2>/dev/null'
+			subprocess.call(command, shell=True)
+			command_rotate = 'convert '+ PWD + '/data_leaf/tmp.jpg -rotate 180 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg'
+			subprocess.call(command_rotate ,shell=True)
+
+			with open(PWD+'/data_leaf.txt', 'w') as f:
 				f.write(str(photo_id))
 			'''
 			# send photo
@@ -65,7 +65,7 @@ class photoThread (threading.Thread):
 			stem.send(bytes([photo_id]))
 
 			print ("Sending photo")
-			f = open(pwd+'/data_leaf/' + str(photo_id).zfill(10) + '.jpg','rb')
+			f = open(PWD+'/data_leaf/' + str(photo_id).zfill(10) + '.jpg','rb')
 			l = f.read(1024)
 			while (l):
 				stem.send(l)
@@ -77,34 +77,67 @@ class photoThread (threading.Thread):
 			'''
 			time.sleep(10) # 10 sec
 
+def send_int_to_arduino(int_value):
+	empty_bytes = bytes([int(int_value/256)])
+	empty_bytes2 = bytes([int_value%256])
+	ser.write(empty_bytes)
+	ser.write(empty_bytes2)
 
-sense = SenseHat()
-host = "192.168.1.1"
-dht_status = 'No data'
-dht_flag = 0
+def light(is_dim):
+	# light(-1) for lighten
+	global threshold_upper_light
+	threshold_upper_light += is_dim * 30
 
-pwd = os.getcwd()
-print (pwd)
+	if is_dim == 1:
+		print ('Dim')
+	else:
+		print ('Lighten')
 
-# communicate with Arduino
+	# write to Arduino
+	ser.write(b'l')
+	send_int_to_arduino(threshold_upper_light)
+
+# Initial Setup
+
+#sense = SenseHat()
+#host = "192.168.1.1"
+
+data = {}
+data_fresh = {}
+lock = threading.Lock()
 ser = serial.Serial('/dev/ttyUSB0', 9600)
+threshold_upper_light = 440
+THRESHOLD_MOISTURE = 200
 
+PWD = os.getcwd()
+print ("PWD: ",PWD)
+
+# Start Threads
 thread1 = photoThread()
 thread1.start()
 
 thread2 = threadReadSerial()
 thread2.start()
 
-while True: # data loop
-	time.sleep(10) # 10 sec
-	'''
-	stem = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	'''
-	humidity = sense.get_humidity()
-	temperature = sense.get_temperature()
+# Initialize Arduino
 
-	message = "SenseHAT Temperature = "+str(temperature)+" C\nSenseHATHumidity = "+str(humidity)+" %"
-	print(message)
-	'''
-	stem.sendto(message.encode('utf-8'), (host, 8763))
-	'''
+time.sleep(5)
+ser.write(b'l')
+send_int_to_arduino(threshold_upper_light)
+
+# Data Loop
+while True:
+#	stem = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	
+#	humidity = sense.get_humidity()
+#	temperature = sense.get_temperature()
+
+#	message = "SenseHAT Temperature = "+str(temperature)+" C\nSenseHATHumidity = "+str(humidity)+" %"
+#	print(message)
+	
+#	stem.sendto(message.encode('utf-8'), (host, 8763))
+
+	if data['Moisture']> THRESHOLD_MOISTURE :
+		ser.write(b'w')
+
+	time.sleep(10) # 10 sec
