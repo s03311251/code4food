@@ -1,7 +1,11 @@
 #!/usr/bin/python3
+import os
 import subprocess
 import socket
 import threading
+
+PWD = os.getcwd()
+print ("PWD: ",PWD)
 
 message = "No data"
 
@@ -30,7 +34,7 @@ print(host)
 stem.bind(('', 8763))
 stem.listen(5)
 
-with open('/home/pi/raspberry/data_stem.txt', 'r') as f:
+with open(PWD + '/data_stem.txt', 'r') as f:
 	photo_id = int(f.readline())
 
 while True:
@@ -44,7 +48,7 @@ while True:
 		photo_id=photo_id+1
 		print(int.from_bytes(conn.recv(1), byteorder='big'))
 		print("Receiving photo")
-		with open('/home/pi/raspberry/data_stem/' + str(photo_id).zfill(10) + '.jpg', 'wb') as f:
+		with open(PWD + '/data_stem/' + str(photo_id).zfill(10) + '.jpg', 'wb') as f:
 			while True:
 				data = conn.recv(1024)
 				if not data:
@@ -53,7 +57,7 @@ while True:
 		f.close()
 		print("Done receiving")
 
-		with open('/home/pi/raspberry/data_stem.txt', 'w') as f:
+		with open(PWD + '/data_stem.txt', 'w') as f:
 			f.write(str(photo_id))
 
 
@@ -65,7 +69,7 @@ while True:
 
 		else:
 			print ("Sending photo")
-			f = open('/home/pi/raspberry/data_stem/' + str(photo_id).zfill(10) + '.jpg','rb')
+			f = open(PWD + '/data_stem/' + str(photo_id).zfill(10) + '.jpg','rb')
 			l = f.read(1024)
 			while (l):
 				conn.send(l)
@@ -97,7 +101,7 @@ while True:
 					photo_id_start = 0
 
 				# call ffmpeg to make video
-				command = 'ffmpeg -y -framerate 10 -start_number '+ str(photo_id_start) +' -i /home/pi/raspberry/data_stem/%10d.jpg -c:v libtheora -r 10 output.ogg' # photo name is 10-digit long
+				command = 'ffmpeg -y -framerate 10 -start_number '+ str(photo_id_start) +' -i '+ PWD + '/data_stem/%10d.jpg -c:v libtheora -r 10 output.ogg' # photo name is 10-digit long
 				subprocess.call(command, shell=True)
 
 				# send video

@@ -4,6 +4,5 @@ For Raspberry Pi:
 
 		sudo pip3 install telepot pyserial
 
-
 For Arduino:
 [dht.h](https://github.com/RobTillaart/Arduino/tree/master/libraries/DHTlib) 

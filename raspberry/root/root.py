@@ -22,10 +22,11 @@ def photo(chat_id):
 	# request photo
 	bot.sendMessage(chat_id, "Requesting photo...")
 
-	host = '192.168.1.1'
+	host = '192.168.100.101'
 	stem = socket.socket()
 	stem.connect((host, 8763))
 	stem.send(b"p")
+	print("Requesting photo from "+str(host))
 
 	bot.sendMessage(chat_id, 'Receiving photo...')
 	with open( str(crop_id)+'.jpg', 'wb') as f:
@@ -52,7 +53,7 @@ def video(chat_id):
 
 	bot.sendMessage(chat_id, "Requesting video...")
 
-	host = '192.168.1.1'
+	host = '192.168.100.101'
 	stem = socket.socket()
 	stem.connect((host, 8763))
 	stem.send(b"v")
@@ -84,7 +85,7 @@ def status(chat_id):
 	# request
 	bot.sendMessage(chat_id, "Requesting data...")
 
-	host = '192.168.1.1'
+	host = '192.168.100.101'
 	stem = socket.socket()
 	stem.connect((host, 8763))
 	stem.send(b"d")

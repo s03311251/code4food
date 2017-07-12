@@ -2,7 +2,7 @@
 import os
 #from sense_hat import SenseHat
 import serial
-#import socket
+import socket
 import subprocess
 import threading
 import time
@@ -50,14 +50,12 @@ class photoThread (threading.Thread):
 			photo_id=(photo_id+1)%256
 
 			print ('Taking photo')
-			command = 'avconv -y -f video4linux2 -s 640x480 -i /dev/video0 -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/tmp.jpg 2>/dev/null'
-			subprocess.call(command, shell=True)
-			command_rotate = 'convert '+ PWD + '/data_leaf/tmp.jpg -rotate 180 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg'
-			subprocess.call(command_rotate ,shell=True)
+			command = 'ffmpeg -y -f video4linux2 -s 640x480 -i /dev/video0 -vf "transpose=2,transpose=2" -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
+			subprocess.call(command ,shell=True)
 
 			with open(PWD+'/data_leaf.txt', 'w') as f:
 				f.write(str(photo_id))
-			'''
+			
 			# send photo
 			stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			stem.connect((host, 8763))
@@ -74,7 +72,7 @@ class photoThread (threading.Thread):
 
 			print('Done sending')
 			stem.close()
-			'''
+			
 			time.sleep(10) # 10 sec
 
 def send_int_to_arduino(int_value):
@@ -100,14 +98,14 @@ def light(is_dim):
 # Initial Setup
 
 #sense = SenseHat()
-#host = "192.168.1.1"
+host = '192.168.1.1'
 
 data = {}
 data_fresh = {}
 lock = threading.Lock()
 ser = serial.Serial('/dev/ttyUSB0', 9600)
 threshold_upper_light = 440
-THRESHOLD_MOISTURE = 200
+THRESHOLD_MOISTURE = 250
 
 PWD = os.getcwd()
 print ("PWD: ",PWD)
