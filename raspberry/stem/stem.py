@@ -100,12 +100,12 @@ while True:
 				if ( photo_id_start < 0):
 					photo_id_start = 0
 
-				# call ffmpeg to make video
-				command = 'ffmpeg -y -framerate 10 -start_number '+ str(photo_id_start) +' -i '+ PWD + '/data_stem/%10d.jpg -c:v libtheora -r 10 output.ogg' # photo name is 10-digit long
+				# call avconv to make video
+				command = 'avconv -y -framerate 10 -start_number '+ str(photo_id_start) +' -i '+ PWD + '/data_stem/%10d.jpg -c:v libtheora -r 10 '+ PWD + '/data_stem/output.ogg' # photo name is 10-digit long
 				subprocess.call(command, shell=True)
 
 				# send video
-				f = open('output.ogg','rb')
+				f = open(PWD + '/data_stem/output.ogg','rb')
 				l = f.read(1024)
 				while (l):
 					conn.send(l)

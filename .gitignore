@@ -1,5 +1,6 @@
+raspberry/root/data_root/
+raspberry/root/user_list.csv
 raspberry/stem/data_stem/
 raspberry/stem/data_stem.txt
 raspberry/leaf/data_leaf/
 raspberry/leaf/data_leaf.txt
-

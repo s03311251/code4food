@@ -50,7 +50,7 @@ class photoThread (threading.Thread):
 			photo_id=(photo_id+1)%256
 
 			print ('Taking photo')
-			command = 'ffmpeg -y -f video4linux2 -s 640x480 -i /dev/video0 -vf "transpose=2,transpose=2" -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
+			command = 'avconv -y -f video4linux2 -s 640x480 -i /dev/video0 -vf "transpose=2,transpose=2" -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
 			subprocess.call(command ,shell=True)
 
 			with open(PWD+'/data_leaf.txt', 'w') as f:
