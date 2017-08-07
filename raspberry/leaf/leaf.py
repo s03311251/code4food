@@ -13,7 +13,11 @@ class threadReadSerial (threading.Thread):
 		global data_fresh
 		data_flag = ''
 		while True :
-			line = ser.readline().decode('utf-8')[:-2]
+			try:
+				line = ser.readline().decode('utf-8')[:-2]
+			except:
+				continue
+
 			if line:  # If it isn't a blank line
 				print(line)
 
@@ -32,12 +36,12 @@ class threadReadSerial (threading.Thread):
 					try:
 						data[data_flag] = float(line)
 						data_fresh[data_flag] = True
-						print (data_flag, ':', data[data_flag])
+						# print (data_flag, ':', data[data_flag])
 					finally:
 						lock.release()
 						data_flag = ''
 
-class photoThread (threading.Thread):
+class threadPhoto (threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 	def run(self):
@@ -57,23 +61,65 @@ class photoThread (threading.Thread):
 				f.write(str(photo_id))
 			
 			# send photo
-			stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			stem.connect((host, 8763))
-			stem.send(b"r")
-			stem.send(bytes([photo_id]))
+			try:
+				stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				stem.connect((host, 8763))
+				stem.send(b"r")
+				stem.send(bytes([photo_id]))
 
-			print ("Sending photo")
-			f = open(PWD+'/data_leaf/' + str(photo_id).zfill(10) + '.jpg','rb')
-			l = f.read(1024)
-			while (l):
-				stem.send(l)
+				print ("Sending photo")
+				f = open(PWD+'/data_leaf/' + str(photo_id).zfill(10) + '.jpg','rb')
 				l = f.read(1024)
-			f.close()
+				while (l):
+					stem.send(l)
+					l = f.read(1024)
+				f.close()
 
-			print('Done sending')
-			stem.close()
+				print('Done sending')
+				stem.close()
+				
+				time.sleep(10) # 10 sec
+			except:
+				time.sleep(10) # 10 sec
+				continue
 			
-			time.sleep(10) # 10 sec
+
+class threadLight (threading.Thread):
+
+	def light(self,is_dim):
+		# light(-1) for lighten
+		global threshold_upper_light
+		threshold_upper_light += is_dim * 30
+
+		if is_dim == 1:
+			print ('Dim')
+		else:
+			print ('Lighten')
+
+		# write to Arduino
+		ser.write(b'l')
+		send_int_to_arduino(threshold_upper_light)
+
+	def run(self):
+		leaf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		host_leaf = socket.gethostname()
+		print(host_leaf)
+		leaf.bind(('', 8764))
+		leaf.listen(5)
+		while True:
+			print ("Listening")
+			conn, addr = leaf.accept()
+			command = conn.recv(1)
+
+			if command == b"L": # lighten
+				self.light(-1)
+				print('Done requesting for lighten')
+			elif command == b"D": # dim
+				self.light(1)
+				print('Done requesting for dim')
+
+			conn.close()
+
 
 def send_int_to_arduino(int_value):
 	empty_bytes = bytes([int(int_value/256)])
@@ -81,24 +127,11 @@ def send_int_to_arduino(int_value):
 	ser.write(empty_bytes)
 	ser.write(empty_bytes2)
 
-def light(is_dim):
-	# light(-1) for lighten
-	global threshold_upper_light
-	threshold_upper_light += is_dim * 30
-
-	if is_dim == 1:
-		print ('Dim')
-	else:
-		print ('Lighten')
-
-	# write to Arduino
-	ser.write(b'l')
-	send_int_to_arduino(threshold_upper_light)
-
 # Initial Setup
 
 #sense = SenseHat()
 host = '192.168.1.1'
+#host = 'localhost'
 
 data = {}
 data_fresh = {}
@@ -111,11 +144,14 @@ PWD = os.getcwd()
 print ("PWD: ",PWD)
 
 # Start Threads
-thread1 = photoThread()
-thread1.start()
+#thread1 = threadPhoto()
+#thread1.start()
 
 thread2 = threadReadSerial()
 thread2.start()
+
+thread3 = threadLight()
+thread3.start()
 
 # Initialize Arduino
 
@@ -123,17 +159,24 @@ time.sleep(5)
 ser.write(b'l')
 send_int_to_arduino(threshold_upper_light)
 
-# Data Loop
+# Data and Water Loop
 while True:
-#	stem = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	
 #	humidity = sense.get_humidity()
 #	temperature = sense.get_temperature()
 
 #	message = "SenseHAT Temperature = "+str(temperature)+" C\nSenseHATHumidity = "+str(humidity)+" %"
-#	print(message)
-	
-#	stem.sendto(message.encode('utf-8'), (host, 8763))
+	message = ''
+	for key, value in data.items():
+		message += key + ': ' + str(value) + '\n'
+
+	print(message)
+
+	stem = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	stem.connect((host, 8763))
+	stem.send(b"d"+message.encode('utf-8'))
+	print('Done sending')
+	stem.close()
 
 	if data['Moisture']> THRESHOLD_MOISTURE :
 		ser.write(b'w')

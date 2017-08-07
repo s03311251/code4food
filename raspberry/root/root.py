@@ -108,10 +108,9 @@ def status(chat_id):
 	# request
 	bot.sendMessage(chat_id, "Requesting data...")
 
-	# host = '192.168.100.101'
 	stem = socket.socket()
 	stem.connect((host, 8763))
-	stem.send(b"d")
+	stem.send(b"s")
 
 	bot.sendMessage(chat_id, 'Receiving data...')
 	data = stem.recv(1024)
@@ -120,6 +119,26 @@ def status(chat_id):
 
 	datamessage = data.decode('utf-8')
 	bot.sendMessage(chat_id, datamessage)
+
+
+
+def light(chat_id, is_dim):
+
+	result = get_id(chat_id)
+	host = result[1]
+
+	# request
+	stem = socket.socket()
+	stem.connect((host, 8763))
+	if is_dim == True:
+		stem.send(b"D")
+		bot.sendMessage(chat_id, "Dim")
+		print('Dim')
+	else:
+		stem.send(b"L")
+		bot.sendMessage(chat_id, "Lighten")
+		print('Lighten')
+	stem.close()
 
 
 
@@ -293,6 +312,12 @@ def message_default(msg, content_type, chat_type, chat_id):
 		elif arguments[0] == '/status':
 			status(chat_id)
 
+		elif arguments[0] == '/lighten':
+			light(from_id, False)
+
+		elif arguments[0] == '/dim':
+			light(from_id, True)
+
 		elif arguments[0] == '/harvest':
 			harvest(chat_id)
 
@@ -430,8 +455,9 @@ def on_callback_query(msg):
 	menu_crop = InlineKeyboardMarkup(inline_keyboard=[
 		[InlineKeyboardButton(text='Get Photo', callback_data='photo')],
 		[InlineKeyboardButton(text='Get Video', callback_data='video')],
-		# [InlineKeyboardButton(text='Lighten', callback_data='lighten')],
-		# [InlineKeyboardButton(text='Dim', callback_data='dim')],
+		[InlineKeyboardButton(text='Get Status', callback_data='status')],
+		[InlineKeyboardButton(text='Lighten', callback_data='lighten')],
+		[InlineKeyboardButton(text='Dim', callback_data='dim')],
 		[InlineKeyboardButton(text='Harvest', callback_data='harvest')],
 	])
 
@@ -464,9 +490,9 @@ def on_callback_query(msg):
 	elif query_data == 'status':
 		status(from_id)
 	elif query_data == 'lighten':
-		pass
+		light(from_id, False)
 	elif query_data == 'dim':
-		pass
+		light(from_id, True)
 	elif query_data == 'harvest':
 		harvest(from_id)
 
@@ -479,7 +505,8 @@ def on_callback_query(msg):
 
 	# My Info
 	elif query_data == 'register':
-		bot.sendMessage(from_id, 'Please enter: /register (type of the crop)')
+		bot.sendMessage(from_id, 'Please enter the type of the crop')
+		last_command[from_id] = Command.register_existing
 	elif query_data == 'del':
 		register(from_id,'')
 	elif query_data == 'clear':

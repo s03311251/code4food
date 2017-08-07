@@ -25,6 +25,23 @@ class dataThread (threading.Thread):
 
 
 
+def light(is_dim):
+
+		leaf = socket.socket()
+		host_leaf = '192.168.1.101'
+#		host_leaf = 'localhost'
+		leaf.connect((host, 8764))
+		if is_dim == True:
+			leaf.send(b"D")
+			print('Dim')
+		else:
+			leaf.send(b"L")
+			print('Lighten')
+		leaf.close()
+
+
+
+
 thread1 = dataThread()
 thread1.start()
 
@@ -96,12 +113,15 @@ while True:
 			else:
 				print('Making video')
 
-				photo_id_start = photo_id_end - 120 # make last 120 photos into video
-				if ( photo_id_start < 0):
-					photo_id_start = 0
-
 				# call avconv to make video
-				command = 'avconv -y -framerate 10 -start_number '+ str(photo_id_start) +' -i '+ PWD + '/data_stem/%10d.jpg -c:v libtheora -r 10 '+ PWD + '/data_stem/output.ogg' # photo name is 10-digit long
+
+				command = 'avconv -y -framerate 10'
+
+				photo_id_start = photo_id_end - 120 # make last 120 photos into video
+				if ( photo_id_start > 0):
+					command += ' -start_number '+ str(photo_id_start) 
+
+				command += ' -i '+ PWD + '/data_stem/%10d.jpg -c:v libtheora -r 10 '+ PWD + '/data_stem/output.ogg' # photo name is 10-digit long
 				subprocess.call(command, shell=True)
 
 				# send video
@@ -115,10 +135,28 @@ while True:
 
 
 
-	elif command == b"d": # send data to root
+	elif command == b"d": # receive data from leaf
+
+		data = conn.recv(1024)
+		message = data.decode("utf-8")
+		print (message)
+		print('Data received')
+
+
+	elif command == b"s": # send data to root
 
 		conn.send(message.encode('utf-8'))
 		print('Done sending')
+
+
+
+	elif command == b"L": # lighten
+		light(False)
+		print('Done requesting for lighten')
+
+	elif command == b"D": # dim
+		light(True)
+		print('Done requesting for dim')
 
 
 
