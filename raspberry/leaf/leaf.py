@@ -84,7 +84,7 @@ class threadPhoto (threading.Thread):
 				continue
 			
 
-class threadLight (threading.Thread):
+class threadLightandSenseHat (threading.Thread):
 
 	def light(self,is_dim):
 		# light(-1) for lighten
@@ -101,12 +101,20 @@ class threadLight (threading.Thread):
 		send_int_to_arduino(threshold_upper_light)
 
 	def run(self):
+		# Light
 		leaf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		host_leaf = socket.gethostname()
 		print(host_leaf)
 		leaf.bind(('', 8764))
 		leaf.listen(5)
+
+		# SenseHAT
+		sense = SenseHat()
+		sense.clear((255,255,255))
+		speed = 0.05
+
 		while True:
+			# Light
 			print ("Listening")
 			conn, addr = leaf.accept()
 			command = conn.recv(1)
@@ -120,6 +128,23 @@ class threadLight (threading.Thread):
 
 			conn.close()
 
+			# SenseHAT
+			for event in sense.stick.get_events():
+				sense.set_pixel(x, y, colours[colour])
+				if event.action == 'pressed' and event.direction == 'up':
+					sense.show_message('M'+str(data['Moisture']), speed, text_colour=(0,0,255))
+				if event.action == 'pressed' and event.direction == 'down':
+					sense.show_message('L'+str(data['Light']), speed, text_colour=(255,255,0))
+				if event.action == 'pressed' and event.direction == 'right':
+					sense.show_message('T'+str(data['Temperature']), speed, text_colour=(255,0,0))
+				if event.action == 'pressed' and event.direction == 'left':
+					sense.show_message('H'+str(data['Enviroment Humidity']), speed, text_colour=(0,255,255))
+				if event.action == 'pressed' and event.direction == 'middle':
+					sense.show_message('I'+str(data['LED Intensity']), speed, text_colour=(255,255,255))
+
+			sense.clear((255,255,255))
+
+
 
 def send_int_to_arduino(int_value):
 	empty_bytes = bytes([int(int_value/256)])
@@ -129,7 +154,6 @@ def send_int_to_arduino(int_value):
 
 # Initial Setup
 
-#sense = SenseHat()
 host = '192.168.1.1'
 #host = 'localhost'
 
@@ -144,13 +168,13 @@ PWD = os.getcwd()
 print ("PWD: ",PWD)
 
 # Start Threads
-#thread1 = threadPhoto()
-#thread1.start()
+thread1 = threadPhoto()
+thread1.start()
 
 thread2 = threadReadSerial()
 thread2.start()
 
-thread3 = threadLight()
+thread3 = threadLightandSenseHat()
 thread3.start()
 
 # Initialize Arduino
