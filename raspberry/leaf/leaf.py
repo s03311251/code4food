@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-#from sense_hat import SenseHat
+from sense_hat import SenseHat
 import serial
 import socket
 import subprocess
@@ -78,9 +78,9 @@ class threadPhoto (threading.Thread):
 				print('Done sending')
 				stem.close()
 				
-				time.sleep(10) # 10 sec
+				time.sleep(180) # 180 sec
 			except:
-				time.sleep(10) # 10 sec
+				time.sleep(180) # 180 sec
 				continue
 			
 
@@ -102,45 +102,45 @@ class threadLightandSenseHat (threading.Thread):
 
 	def run(self):
 		# Light
-		leaf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		host_leaf = socket.gethostname()
-		print(host_leaf)
-		leaf.bind(('', 8764))
-		leaf.listen(5)
+#		leaf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#		host_leaf = socket.gethostname()
+#		print(host_leaf)
+#		leaf.bind(('', 8764))
+#		leaf.listen(5)
 
 		# SenseHAT
 		sense = SenseHat()
+		sense.set_rotation(180)
 		sense.clear((255,255,255))
-		speed = 0.05
+		speed = 0.08
 
 		while True:
 			# Light
-			print ("Listening")
-			conn, addr = leaf.accept()
-			command = conn.recv(1)
-
-			if command == b"L": # lighten
-				self.light(-1)
-				print('Done requesting for lighten')
-			elif command == b"D": # dim
-				self.light(1)
-				print('Done requesting for dim')
-
-			conn.close()
+#			print ("Listening")
+#			conn, addr = leaf.accept()
+#			command = conn.recv(1)
+#
+#			if command == b"L": # lighten
+#				self.light(-1)
+#				print('Done requesting for lighten')
+#			elif command == b"D": # dim
+#				self.light(1)
+#				print('Done requesting for dim')
+#
+#			conn.close()
 
 			# SenseHAT
 			for event in sense.stick.get_events():
-				sense.set_pixel(x, y, colours[colour])
 				if event.action == 'pressed' and event.direction == 'up':
-					sense.show_message('M'+str(data['Moisture']), speed, text_colour=(0,0,255))
+					sense.show_message('M '+str(data['Moisture']), speed, text_colour=(0,0,255))
 				if event.action == 'pressed' and event.direction == 'down':
-					sense.show_message('L'+str(data['Light']), speed, text_colour=(255,255,0))
+					sense.show_message('L '+str(data['Light']), speed, text_colour=(255,255,0))
 				if event.action == 'pressed' and event.direction == 'right':
-					sense.show_message('T'+str(data['Temperature']), speed, text_colour=(255,0,0))
+					sense.show_message('T '+str(data['Temperature']), speed, text_colour=(255,0,0))
 				if event.action == 'pressed' and event.direction == 'left':
-					sense.show_message('H'+str(data['Enviroment Humidity']), speed, text_colour=(0,255,255))
+					sense.show_message('H '+str(data['Enviroment Humidity']), speed, text_colour=(0,255,255))
 				if event.action == 'pressed' and event.direction == 'middle':
-					sense.show_message('I'+str(data['LED Intensity']), speed, text_colour=(255,255,255))
+					sense.show_message('I '+str(data['LED Intensity']), speed, text_colour=(255,255,255))
 
 			sense.clear((255,255,255))
 
@@ -189,7 +189,6 @@ while True:
 #	humidity = sense.get_humidity()
 #	temperature = sense.get_temperature()
 
-#	message = "SenseHAT Temperature = "+str(temperature)+" C\nSenseHATHumidity = "+str(humidity)+" %"
 	message = ''
 	for key, value in data.items():
 		message += key + ': ' + str(value) + '\n'
@@ -205,4 +204,4 @@ while True:
 	if data['Moisture']> THRESHOLD_MOISTURE :
 		ser.write(b'w')
 
-	time.sleep(10) # 10 sec
+	time.sleep(30) # 30 sec
