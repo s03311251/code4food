@@ -86,7 +86,9 @@ while True:
 
 		else:
 			print ("Sending photo")
-			f = open(PWD + '/data_stem/' + str(photo_id).zfill(10) + '.jpg','rb')
+			path = PWD + '/data_stem/' + str(photo_id).zfill(10) + '.jpg'
+			print ('Opening ' + path)
+			f = open(path, 'rb')
 			l = f.read(1024)
 			while (l):
 				conn.send(l)

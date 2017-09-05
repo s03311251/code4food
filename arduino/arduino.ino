@@ -10,8 +10,8 @@ int driver_led = 11;
 int driver_pump = 10;
 
 int threshold_moist = 300;
-int threshold_upper_light = 440;
-int threshold_lower_light = 470;
+int threshold_upper_light = 550;
+int threshold_lower_light = 565;
 
 int value_moist;
 int value_light; // light -> lower ; dark -> higher
@@ -66,7 +66,7 @@ void loop() {
       
       // update threshold value
       threshold_upper_light=data;
-      threshold_lower_light=data+30;
+      threshold_lower_light=data+15;
       if (threshold_lower_light>1023){
         threshold_lower_light=1023;
       }
@@ -84,15 +84,15 @@ void loop() {
     }
   }  
   
-/*  // response action of moist
-  if ( value_moist > threshold_moist ) {
+  // response action of moist
+  if ( value_moist > threshold_moist && value_moist!=1023 ) {
 //    if (false) {
     // pump water
     digitalWrite(driver_pump,HIGH);
     delay(time_pump*1000);
     digitalWrite(driver_pump,LOW);
   }
-*/ 
+
 
   // response action of light 
   while (value_light > threshold_lower_light ) {
