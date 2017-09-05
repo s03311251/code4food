@@ -55,6 +55,7 @@ class threadPhoto (threading.Thread):
 
 			print ('Taking photo')
 			command = 'avconv -y -f video4linux2 -s 640x480 -i /dev/video0 -vf "transpose=2,transpose=2" -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
+			#command = 'ffmpeg -y -f video4linux2 -s 640x480 -i /dev/video0 -vf "transpose=2,transpose=2" -ss 0:0:2 -frames 1 '+ PWD + '/data_leaf/' + str(photo_id).zfill(10) + '.jpg 2>/dev/null'
 			subprocess.call(command ,shell=True)
 
 			with open(PWD+'/data_leaf.txt', 'w') as f:
@@ -84,7 +85,7 @@ class threadPhoto (threading.Thread):
 				continue
 			
 
-class threadLightandSenseHat (threading.Thread):
+class threadLight (threading.Thread):
 
 	def light(self,is_dim):
 		# light(-1) for lighten
@@ -101,20 +102,13 @@ class threadLightandSenseHat (threading.Thread):
 		send_int_to_arduino(threshold_upper_light)
 
 	def run(self):
-		# Light
 		leaf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		host_leaf = socket.gethostname()
 		print(host_leaf)
 		leaf.bind(('', 8764))
 		leaf.listen(5)
 
-		# SenseHAT
-		sense = SenseHat()
-		sense.clear((255,255,255))
-		speed = 0.05
-
 		while True:
-			# Light
 			print ("Listening")
 			conn, addr = leaf.accept()
 			command = conn.recv(1)
@@ -128,7 +122,16 @@ class threadLightandSenseHat (threading.Thread):
 
 			conn.close()
 
-			# SenseHAT
+
+
+class threadSenseHat (threading.Thread):
+
+	def run(self):
+		sense = SenseHat()
+		sense.clear((255,255,255))
+		speed = 0.05
+
+		while True:
 			for event in sense.stick.get_events():
 				sense.set_pixel(x, y, colours[colour])
 				if event.action == 'pressed' and event.direction == 'up':
@@ -161,8 +164,8 @@ data = {}
 data_fresh = {}
 lock = threading.Lock()
 ser = serial.Serial('/dev/ttyUSB0', 9600)
-threshold_upper_light = 440
-THRESHOLD_MOISTURE = 250
+threshold_upper_light = 550
+#THRESHOLD_MOISTURE = 250
 
 PWD = os.getcwd()
 print ("PWD: ",PWD)
@@ -174,8 +177,11 @@ thread1.start()
 thread2 = threadReadSerial()
 thread2.start()
 
-thread3 = threadLightandSenseHat()
+thread3 = threadLight()
 thread3.start()
+
+thread4 = threadLSenseHat()
+thread4.start()
 
 # Initialize Arduino
 
@@ -202,7 +208,7 @@ while True:
 	print('Done sending')
 	stem.close()
 
-	if data['Moisture']> THRESHOLD_MOISTURE :
-		ser.write(b'w')
+#	if data['Moisture']> THRESHOLD_MOISTURE :
+#		ser.write(b'w')
 
 	time.sleep(10) # 10 sec
