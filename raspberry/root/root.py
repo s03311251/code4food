@@ -519,8 +519,10 @@ def on_callback_query(msg):
 
 	# Request Response
 	elif query_data.split()[0] == 'accept':
-		bot.sendMessage(from_id, 'Request Accepted')
-		bot.sendMessage(query_data.split()[1], 'Request for '+ query_data.split()[2] + ' from ' + query_data.split()[3] + ' has been accepted')
+		bot.sendMessage(from_id, 'Request Accepted\nHere is the contact:')
+		bot.sendMessage(from_id, '@'+bot.getChat(query_data.split()[1])['username'])
+		bot.sendMessage(query_data.split()[1], 'Request for '+ query_data.split()[2] + ' from ' + query_data.split()[3] + ' has been accepted\nHere is the contact:')
+		bot.sendMessage(query_data.split()[1], '@'+bot.getChat(from_id)['username'])
 	elif query_data.split()[0] == 'deny':
 		bot.sendMessage(from_id, 'Request Denied')
 		bot.sendMessage(query_data.split()[1], 'Request for '+ query_data.split()[2] + ' from ' + query_data.split()[3] + ' has been denied')
