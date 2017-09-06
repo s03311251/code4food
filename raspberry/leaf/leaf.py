@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-#from sense_hat import SenseHat
+from sense_hat import SenseHat
 import serial
 import socket
 import subprocess
@@ -165,8 +165,8 @@ data = {}
 data_fresh = {}
 lock = threading.Lock()
 ser = serial.Serial('/dev/ttyUSB0', 9600)
-threshold_upper_light = 550
-#THRESHOLD_MOISTURE = 250
+threshold_upper_light = 590
+THRESHOLD_MOISTURE = 250
 
 PWD = os.getcwd()
 print ("PWD: ",PWD)
@@ -178,8 +178,11 @@ thread1.start()
 thread2 = threadReadSerial()
 thread2.start()
 
-thread3 = threadLightandSenseHat()
+thread3 = threadLight()
 thread3.start()
+
+thread4 = threadSenseHat()
+thread4.start()
 
 # Initialize Arduino
 
