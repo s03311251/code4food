@@ -25,20 +25,15 @@ class dataThread (threading.Thread):
 
 
 
-def light(is_dim):
+def leaf_command(command):
 
 		leaf = socket.socket()
-		host_leaf = '192.168.1.101'
+		host_leaf = '192.168.1.49'
 #		host_leaf = 'localhost'
-		leaf.connect((host, 8764))
-		if is_dim == True:
-			leaf.send(b"D")
-			print('Dim')
-		else:
-			leaf.send(b"L")
-			print('Lighten')
+		leaf.connect((host_leaf, 8764))
+		leaf.send(command)
+		print('Command ' + str(command) + ' sent')
 		leaf.close()
-
 
 
 
@@ -153,12 +148,16 @@ while True:
 
 
 	elif command == b"L": # lighten
-		light(False)
+		leaf_command(b"L")
 		print('Done requesting for lighten')
 
 	elif command == b"D": # dim
-		light(True)
+		leaf_command(b"D")
 		print('Done requesting for dim')
+
+	elif command == b"w": # water
+		leaf_command(b"w")
+		print('Done requesting for watering')
 
 
 

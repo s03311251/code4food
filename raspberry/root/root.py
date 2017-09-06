@@ -122,7 +122,7 @@ def status(chat_id):
 
 
 
-def light(chat_id, is_dim):
+def leaf_command(chat_id, command):
 
 	result = get_id(chat_id)
 	host = result[1]
@@ -130,14 +130,16 @@ def light(chat_id, is_dim):
 	# request
 	stem = socket.socket()
 	stem.connect((host, 8763))
-	if is_dim == True:
-		stem.send(b"D")
+	stem.send(command)
+	if command == b"D":
 		bot.sendMessage(chat_id, "Dim")
 		print('Dim')
-	else:
-		stem.send(b"L")
+	elif command == b"L":
 		bot.sendMessage(chat_id, "Lighten")
 		print('Lighten')
+	elif command == b"w":
+		bot.sendMessage(chat_id, "Watering")
+		print('Watering')
 	stem.close()
 
 
@@ -313,10 +315,13 @@ def message_default(msg, content_type, chat_type, chat_id):
 			status(chat_id)
 
 		elif arguments[0] == '/lighten':
-			light(from_id, False)
+			leaf_command(chat_id, b"L")
 
 		elif arguments[0] == '/dim':
-			light(from_id, True)
+			leaf_command(chat_id, b"D")
+
+		elif arguments[0] == '/water':
+			leaf_command(chat_id, b"w")
 
 		elif arguments[0] == '/harvest':
 			harvest(chat_id)
@@ -490,9 +495,9 @@ def on_callback_query(msg):
 	elif query_data == 'status':
 		status(from_id)
 	elif query_data == 'lighten':
-		light(from_id, False)
+		leaf_command(from_id, b"L")
 	elif query_data == 'dim':
-		light(from_id, True)
+		leaf_command(from_id, b"D")
 	elif query_data == 'harvest':
 		harvest(from_id)
 

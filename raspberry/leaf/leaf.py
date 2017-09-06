@@ -90,7 +90,7 @@ class threadLight (threading.Thread):
 	def light(self,is_dim):
 		# light(-1) for lighten
 		global threshold_upper_light
-		threshold_upper_light += is_dim * 30
+		threshold_upper_light += is_dim * 15
 
 		if is_dim == 1:
 			print ('Dim')
@@ -120,6 +120,9 @@ class threadLight (threading.Thread):
 			elif command == b"D": # dim
 				self.light(1)
 				print('Done requesting for dim')
+			elif command == b"w": # watering !!!!! cheat !!!!!
+				ser.write(b'w')
+				print('Done requesting for watering')
 
 			conn.close()
 
@@ -190,7 +193,7 @@ time.sleep(5)
 ser.write(b'l')
 send_int_to_arduino(threshold_upper_light)
 
-# Data and Water Loop
+# Data Loop
 while True:
 	
 #	humidity = sense.get_humidity()
@@ -208,7 +211,7 @@ while True:
 	print('Done sending')
 	stem.close()
 
-	if data['Moisture']> THRESHOLD_MOISTURE :
-		ser.write(b'w')
+#	if data['Moisture']> THRESHOLD_MOISTURE :
+#		ser.write(b'w')
 
 	time.sleep(30) # 30 sec
